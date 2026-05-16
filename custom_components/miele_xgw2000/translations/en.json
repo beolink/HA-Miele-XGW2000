@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Miele XGW 2000 Gateway",
-        "description": "Enter the connection details for your XGW 2000 gateway. You can also configure this in configuration.yaml.",
+        "description": "Enter the connection details for your XGW 2000 gateway.",
         "data": {
           "host": "IP Address",
           "username": "Username",
@@ -13,11 +13,10 @@
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect to the gateway. Check IP address and credentials."
+      "cannot_connect": "Cannot connect to the gateway. Check the IP address and credentials."
     },
     "abort": {
-      "already_configured": "This gateway is already configured.",
-      "cannot_connect": "Cannot connect to the gateway (from configuration.yaml)."
+      "already_configured": "This gateway is already configured."
     }
   }
 }

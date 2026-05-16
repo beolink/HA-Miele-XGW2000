@@ -3,16 +3,17 @@
     "step": {
       "user": {
         "title": "Miele XGW 2000 Gateway",
-        "description": "Enter the IP address of your XGW 2000 gateway.",
+        "description": "Enter the connection details for your XGW 2000 gateway.",
         "data": {
           "host": "IP Address",
           "username": "Username",
-          "password": "Password"
+          "password": "Password",
+          "scan_interval": "Poll interval (seconds)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect to the gateway. Check IP address and credentials."
+      "cannot_connect": "Cannot connect to the gateway. Check the IP address and credentials."
     },
     "abort": {
       "already_configured": "This gateway is already configured."

@@ -7,73 +7,73 @@ Local integration for Miele@home appliances connected via the **XGW 2000** gatew
 
 ---
 
-## Vad är Miele@home?
+## What is Miele@home?
 
-Miele@home är Mieles system för att ansluta hushållsmaskiner till ett lokalt nätverk. Maskinerna kommunicerar via **Powerline** (HomePlug) — det vill säga via det vanliga elnätet — och behöver inget separat trådlöst nätverk. Systemet gör det möjligt att:
+Miele@home is Miele's system for connecting household appliances to a local network. Appliances communicate via **Powerline** (HomePlug) — through the existing electrical wiring — and require no separate wireless network. The system enables you to:
 
-- Övervaka maskiners status (program, fas, återstående tid)
-- Ta emot felmeddelanden och driftinformation
-- Styra maskiner (start, stopp, paus) beroende på maskintyp och läge
-- Integrera maskiner i smarta hem-system via ett öppet XML-API
+- Monitor appliance status (program, phase, remaining time)
+- Receive error messages and operational information
+- Control appliances (start, stop, pause) depending on appliance type and state
+- Integrate appliances into smart home systems via an open XML API
 
-Miele@home stöds av en rad produkter: tvättmaskiner, torktumlare, diskmaskiner, ugnar, kylskåp och frysar.
+Miele@home is supported by a wide range of products: washing machines, tumble dryers, dishwashers, ovens, refrigerators and freezers.
 
 ---
 
-## Vad är XGW 2000?
+## What is the XGW 2000?
 
-**XGW 2000** (eXternal GateWay 2000) är Mieles nätverksgateway som fungerar som brygga mellan Miele@home-maskinerna och ett vanligt Ethernet-/IP-nätverk.
+The **XGW 2000** (eXternal GateWay 2000) is Miele's network gateway that bridges Miele@home appliances to a standard Ethernet/IP network.
 
 ```
-[Miele-maskiner] ──Powerline──► [XGW 2000] ──Ethernet──► [Hemmanätverk / Home Assistant]
+[Miele appliances] ──Powerline──► [XGW 2000] ──Ethernet──► [Home network / Home Assistant]
 ```
 
-Gatewayen:
-- Ansluts till elnätet (Powerline) och Ethernet samtidigt
-- Har ett inbyggt webbgränssnitt för konfiguration (`http://<ip>/`)
-- Exponerar ett **lokalt HTTP/XML-API** kallat *Hausbus-Schnittstelle* på `http://<ip>/homebus`
-- Skickar **UDP multicast-notiser** (239.255.68.139) när en maskins status ändras
+The gateway:
+- Connects to both the power line (Powerline) and Ethernet simultaneously
+- Has a built-in web interface for configuration (`http://<ip>/`)
+- Exposes a **local HTTP/XML API** called the *Hausbus interface* at `http://<ip>/homebus`
+- Sends **UDP multicast notifications** (239.255.68.139) whenever an appliance changes state
 
-### Standardinställningar
+### Default settings
 
-| Parameter | Standardvärde |
+| Parameter | Default value |
 |-----------|--------------|
-| IP-adress | `192.168.1.237` |
-| Användarnamn | `xgw2000` |
-| Lösenord | `xgw2000` |
-| Homebus-URL | `http://<ip>/homebus` |
+| IP address | `192.168.1.237` |
+| Username | `xgw2000` |
+| Password | `xgw2000` |
+| Homebus URL | `http://<ip>/homebus` |
 
-> Lösenordet kan ändras i gatewayens webbgränssnitt under **Status**.
+> The password can be changed in the gateway's web interface under **Status**.
 
 ---
 
-## Hur API:et fungerar
+## How the API works
 
-### Hausbus-Schnittstelle (XML API)
+### Hausbus interface (XML API)
 
-Gatewayen erbjuder ett tre-stegs XML-API:
+The gateway provides a three-step XML API:
 
-#### Steg 1 — Hämta alla maskiner
+#### Step 1 — Fetch all appliances
 
 ```
 GET http://<gateway-ip>/homebus
 ```
 
-Returnerar en lista med alla anslutna maskiner och deras grundstatus. Varje maskin innehåller också en URL till mer detaljerad information.
+Returns a list of all connected appliances and their basic status. Each appliance also contains a URL pointing to more detailed information.
 
-**Exempel på svar:**
+**Example response:**
 ```xml
 <DEVICES>
   <device>
     <class>com.miele.xgw3000.gateway.api.appliance.MieleApplianceWM</class>
     <UID>000123456789</UID>
     <type>WM_W1234</type>
-    <name>Waschautomat</name>
-    <state>In Betrieb</state>
+    <name>Washing machine</name>
+    <state>Running</state>
     <additionalName/>
-    <room id="1" level="0">Keller</room>
+    <room id="1" level="0">Basement</room>
     <information>
-      <key name="phase" value="Waschen"/>
+      <key name="phase" value="Washing"/>
       <key name="remainingTime" value="1:23"/>
     </information>
     <actions>
@@ -83,19 +83,19 @@ Returnerar en lista med alla anslutna maskiner och deras grundstatus. Varje mask
 </DEVICES>
 ```
 
-#### Steg 2 — Hämta detaljstatus för en maskin
+#### Step 2 — Fetch detailed status for an appliance
 
 ```
 GET http://<gateway-ip>/homebus/appliance?uid=<UID>
 ```
 
-Returnerar utökad information och de åtgärder som är tillgängliga i maskinens nuvarande läge (t.ex. start/stopp är bara tillgängliga i rätt läge).
+Returns extended information and the actions available in the appliance's current state (e.g. start/stop are only available at the right moment).
 
 ```xml
 <device>
   <information>
-    <key name="program" value="Baumwolle"/>
-    <key name="phase" value="Waschen"/>
+    <key name="program" value="Cotton"/>
+    <key name="phase" value="Washing"/>
     <key name="remainingTime" value="1:23"/>
     <key name="startTime" value="14:41"/>
     <key name="endTime" value="16:30"/>
@@ -106,13 +106,13 @@ Returnerar utökad information och de åtgärder som är tillgängliga i maskine
 </device>
 ```
 
-#### Steg 3 — Utlös en åtgärd
+#### Step 3 — Trigger an action
 
 ```
 GET http://<gateway-ip>/homebus/appliance?uid=<UID>&action=start
 ```
 
-**Vid lyckad åtgärd:**
+**On success:**
 ```xml
 <ok>
   <action>start</action>
@@ -121,114 +121,114 @@ GET http://<gateway-ip>/homebus/appliance?uid=<UID>&action=start
 </ok>
 ```
 
-**Vid fel:**
+**On error:**
 ```xml
 <error>
   <error-type>ACTION_EXEC_ERROR</error-type>
   <cu-type>WM_W1234</cu-type>
   <cu-id>000123456789</cu-id>
   <action-id>start</action-id>
-  <message>Maskin ej redo</message>
+  <message>Appliance not ready</message>
 </error>
 ```
 
-### XML-scheman (DTD)
+### XML schemas (DTD)
 
-Gatewayen definierar XML-strukturen via fyra DTD-filer:
+The gateway defines the XML structure via four DTD files:
 
-| DTD-fil | Beskrivning |
-|---------|-------------|
-| `appliance_list.dtd` | Struktur för bas-listan med alla maskiner |
-| `appliance_info.dtd` | Struktur för detaljsvar per maskin |
-| `action_ok_response.dtd` | Svar vid lyckad åtgärd |
-| `error.dtd` | Felsvar med felkod och meddelande |
+| DTD file | Description |
+|----------|-------------|
+| `appliance_list.dtd` | Structure for the base list of all appliances |
+| `appliance_info.dtd` | Structure for the detail response per appliance |
+| `action_ok_response.dtd` | Response on successful action |
+| `error.dtd` | Error response with error code and message |
 
-### Push-notiser via UDP multicast
+### Push notifications via UDP multicast
 
-Förutom polling skickar gatewayen automatiskt en UDP-notis till multicast-adressen **239.255.68.139** när en maskins status ändras. Den här integrationen lyssnar på dessa notiser och triggar en omedelbar uppdatering, vilket ger snabbare respons än enbart polling.
+In addition to polling, the gateway automatically sends a UDP notification to multicast address **239.255.68.139** whenever an appliance changes state. This integration listens for these notifications and triggers an immediate refresh, giving faster response than polling alone.
 
 ---
 
-## Funktioner i integrationen
+## Integration features
 
-### Sensorer (per maskin)
+### Sensors (per appliance)
 
-| Sensor | Beskrivning |
+| Sensor | Description |
 |--------|-------------|
-| **Status** | Maskinens övergripande tillstånd (Bereit, In Betrieb, etc.) |
-| **Program** | Valt program (t.ex. Baumwolle, Pflegeleicht) |
-| **Fas** | Aktuell fas (Waschen, Spülen, Schleudern, etc.) |
-| **Återstående tid** | Tid kvar i minuter |
-| **Starttid** | Planerad starttid |
-| **Sluttid** | Beräknad sluttid |
+| **Status** | Overall appliance state (Ready, Running, etc.) |
+| **Program** | Selected program (e.g. Cotton, Easy-Care) |
+| **Phase** | Current phase (Washing, Rinsing, Spinning, etc.) |
+| **Remaining time** | Time remaining in minutes |
+| **Start time** | Scheduled start time |
+| **End time** | Estimated end time |
 
-### Knappar (per maskin, beroende på läge)
+### Buttons (per appliance, depending on state)
 
-| Knapp | Beskrivning |
-|-------|-------------|
-| **Start** | Startar maskinen |
-| **Stop** | Stoppar pågående program |
-| **Pause** | Pausar maskinen |
-| **SuperCooling on/off** | Aktiverar/avaktiverar SuperCooling (kylskåp) |
-| **SuperFreezing on/off** | Aktiverar/avaktiverar SuperFreezing (frys) |
+| Button | Description |
+|--------|-------------|
+| **Start** | Start the appliance |
+| **Stop** | Stop the current program |
+| **Pause** | Pause the appliance |
+| **SuperCooling on/off** | Activate/deactivate SuperCooling (refrigerator) |
+| **SuperFreezing on/off** | Activate/deactivate SuperFreezing (freezer) |
 
-> Tillgängliga knappar beror på maskintyp och aktuellt läge — gatewayen exponerar bara de åtgärder som är möjliga just nu.
+> Available buttons depend on appliance type and current state — the gateway only exposes actions that are possible at any given moment.
 
 ---
 
 ## Installation
 
-### Via HACS (rekommenderat)
+### Via HACS (recommended)
 
-1. Öppna HACS i Home Assistant
-2. Gå till **Integrations** → klicka på tre-punktsmenyn → **Custom repositories**
-3. Lägg till: `https://github.com/beolink/HA-Miele-XGW2000`
-4. Välj kategori: **Integration**
-5. Klicka **Add** → sök efter "Miele" → **Download**
-6. Starta om Home Assistant
+1. Open HACS in Home Assistant
+2. Go to **Integrations** → click the three-dot menu → **Custom repositories**
+3. Add: `https://github.com/beolink/HA-Miele-XGW2000`
+4. Select category: **Integration**
+5. Click **Add** → search for "Miele" → **Download**
+6. Restart Home Assistant
 
-### Manuell installation
+### Manual installation
 
-1. Kopiera mappen `custom_components/miele_xgw2000/` till din HA:s `config/custom_components/`
-2. Starta om Home Assistant
-
----
-
-## Konfiguration
-
-1. Gå till **Inställningar → Enheter & Tjänster → Lägg till integration**
-2. Sök efter **Miele XGW 2000**
-3. Fyll i formuläret:
-
-| Fält | Beskrivning | Standard |
-|------|-------------|---------|
-| **IP-adress** | Gatewayens IP-adress | `10.0.40.20` |
-| **Användarnamn** | Inloggning för Homebus (om aktiverat) | `xgw2000` |
-| **Lösenord** | Lösenord för Homebus (om aktiverat) | `xgw2000` |
-| **Poll-intervall** | Sekunder mellan uppdateringar | `30` |
-
-> **Obs:** Homebus-inloggning är avaktiverat som standard i gatewayen. Det aktiveras under **Konfigurationseinstellungen → Homebus Login aktiv** i gatewayens webbgränssnitt.
+1. Copy the `custom_components/miele_xgw2000/` folder to your HA `config/custom_components/` directory
+2. Restart Home Assistant
 
 ---
 
-## Gateway-konfiguration (rekommenderade inställningar)
+## Configuration
 
-I gatewayens webbgränssnitt (`http://<ip>/`) rekommenderas följande inställningar för bästa integration:
+1. Go to **Settings → Devices & Services → Add Integration**
+2. Search for **Miele XGW 2000**
+3. Fill in the form:
 
-- **Homebus Event Notification** → `på` (standard) — skickar push-notiser vid statusändring
-- **Homebus alle Informationen senden** → `på` — skickar all statusinformation, inte bara det viktigaste
-- **Gateway periodisch neu starten** → valfritt (gatewayen startas om var 24:e timme som standard)
+| Field | Description | Default |
+|-------|-------------|---------|
+| **IP Address** | IP address of the gateway | `10.0.40.20` |
+| **Username** | Login for Homebus (if enabled) | `xgw2000` |
+| **Password** | Password for Homebus (if enabled) | `xgw2000` |
+| **Poll interval** | Seconds between updates | `30` |
+
+> **Note:** Homebus login is disabled by default in the gateway. It can be enabled under **Configuration settings → Homebus Login active** in the gateway's web interface.
 
 ---
 
-## Felsökning
+## Recommended gateway settings
 
-**Integrationen hittar inga maskiner**
-- Kontrollera att gatewayen är nåbar: `http://<ip>/homebus` ska returnera XML
-- Kontrollera att maskinerna är anslutna via Powerline (PL-LEDen på gatewayen ska lysa konstant)
+In the gateway's web interface (`http://<ip>/`) the following settings are recommended for the best integration experience:
 
-**Sensorer visar okänd/tom data**
-- Aktivera debug-loggning i HA för att se vilka `key`-namn gatewayen skickar:
+- **Homebus Event Notification** → `on` (default) — sends push notifications on state change
+- **Homebus send all information** → `on` — sends all status information, not just the essentials
+- **Gateway periodic restart** → optional (the gateway restarts every 24 hours by default)
+
+---
+
+## Troubleshooting
+
+**Integration finds no appliances**
+- Verify the gateway is reachable: `http://<ip>/homebus` should return XML
+- Check that appliances are connected via Powerline (the PL LED on the gateway should be solid)
+
+**Sensors show unknown/empty data**
+- Enable debug logging in HA to see which `key` names your gateway sends:
 ```yaml
 logger:
   default: warning
@@ -236,22 +236,22 @@ logger:
     custom_components.miele_xgw2000: debug
 ```
 
-**Knappar är gråa/otillgängliga**
-- Normalt beteende — gatewayen exponerar bara åtgärder som är möjliga i maskinens nuvarande läge. Start visas t.ex. bara när maskinen är redo och stopp bara när den är igång.
+**Buttons are greyed out / unavailable**
+- This is normal — the gateway only exposes actions that are valid in the appliance's current state. Start is only shown when the appliance is ready, stop only when it is running.
 
 ---
 
-## Tekniska detaljer
+## Technical details
 
-- **Kommunikation:** Lokal HTTP, ingen molnåtkomst
-- **Protokoll:** XML över HTTP (Hausbus-Schnittstelle, firmware ≥ 3.0.0)
-- **Push-notiser:** UDP multicast 239.255.68.139
-- **Polling:** Konfigurerbart, standard 30 sekunder
-- **HA-plattformar:** `sensor`, `button`
-- **Config entries:** Konfigureras via UI, sparas i HA:s interna lagring
+- **Communication:** Local HTTP only, no cloud access
+- **Protocol:** XML over HTTP (Hausbus interface, firmware ≥ 3.0.0)
+- **Push notifications:** UDP multicast 239.255.68.139
+- **Polling:** Configurable, default 30 seconds
+- **HA platforms:** `sensor`, `button`
+- **Config entries:** Configured via UI, stored in HA's internal storage
 
 ---
 
-## Licens
+## License
 
 MIT
