@@ -231,7 +231,7 @@ In the gateway's web interface (`http://<ip>/`) the following settings are recom
 **Integration finds no appliances**
 - Verify the gateway is reachable: `http://<ip>/homebus` should return XML
 - Check that appliances are connected via Powerline (the PL LED on the gateway should be solid)
-- Appliances can drop off the bus while idle, and the gateway may then list none at all (`<DEVICES></DEVICES>`). The integration adds an appliance's sensors and buttons when it shows up, so setup succeeds even with an empty list. An appliance that was off when it dropped off keeps showing its last values; one that dropped off mid-program goes unavailable after 10 minutes.
+- Appliances can drop off the bus while idle, and the gateway may then list none at all (`<DEVICES></DEVICES>`). The integration adds an appliance's sensors and buttons when it shows up, so setup succeeds even with an empty list. An appliance that was off when it dropped off keeps showing its last values; one that dropped off mid-program goes unavailable after 10 minutes. The last known values are saved (in `.storage/miele_xgw2000.<entry id>`), so this also holds across Home Assistant restarts.
 
 **Entities briefly go unavailable**
 - The gateway misses the odd request. Up to 3 failed polls in a row are tolerated (the last values are kept); after that, entities go unavailable until the gateway answers again.

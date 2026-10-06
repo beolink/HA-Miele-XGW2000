@@ -6,9 +6,11 @@ import logging
 import socket
 import struct
 import time
+from dataclasses import asdict
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import MieleApi, MieleAppliance, MieleApiError
@@ -21,11 +23,24 @@ MAX_TOLERATED_FAILURES = 3
 # How long an appliance that drops off mid-program keeps its last values
 MISSING_GRACE_SECONDS = 600
 
+STORAGE_VERSION = 1
+SAVE_DELAY = 10
+
+
+def storage_key(entry_id: str) -> str:
+    return f"{DOMAIN}.{entry_id}"
+
 
 class MieleCoordinator(DataUpdateCoordinator[dict[str, MieleAppliance]]):
     """Polls the gateway and optionally listens for multicast push notifications."""
 
-    def __init__(self, hass: HomeAssistant, api: MieleApi, scan_interval: int = DEFAULT_SCAN_INTERVAL) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        api: MieleApi,
+        entry_id: str,
+        scan_interval: int = DEFAULT_SCAN_INTERVAL,
+    ) -> None:
         super().__init__(
             hass,
             _LOGGER,
@@ -36,6 +51,38 @@ class MieleCoordinator(DataUpdateCoordinator[dict[str, MieleAppliance]]):
         self._mcast_task: asyncio.Task | None = None
         self._failures = 0
         self._last_seen: dict[str, float] = {}
+        self._store: Store = Store(hass, STORAGE_VERSION, storage_key(entry_id))
+        self._saved: dict | None = None
+
+    async def async_restore(self) -> None:
+        """Seed data with the appliances known before the last restart.
+
+        An appliance that is off the bus when Home Assistant starts would
+        otherwise stay unavailable until it rejoins.
+        """
+        stored = await self._store.async_load()
+        if not stored:
+            return
+        self._saved = stored
+        self._last_seen = dict(stored.get("last_seen", {}))
+        self.data = {
+            uid: MieleAppliance(**{**fields, "actions": []})
+            for uid, fields in stored.get("appliances", {}).items()
+        }
+
+    def _async_save(self, data: dict[str, MieleAppliance]) -> None:
+        """Persist appliances, but only when something other than last_seen changed."""
+        appliances = {
+            uid: {k: v for k, v in asdict(a).items() if k != "actions"}
+            for uid, a in data.items()
+        }
+        if self._saved is not None and self._saved.get("appliances") == appliances:
+            return
+        self._saved = {
+            "appliances": appliances,
+            "last_seen": {uid: self._last_seen[uid] for uid in data if uid in self._last_seen},
+        }
+        self._store.async_delay_save(lambda: self._saved, SAVE_DELAY)
 
     async def _async_update_data(self) -> dict[str, MieleAppliance]:
         try:
@@ -70,7 +117,8 @@ class MieleCoordinator(DataUpdateCoordinator[dict[str, MieleAppliance]]):
                 except MieleApiError:
                     pass  # keep what we have from the base list
 
-        now = time.monotonic()
+        # Wall clock, not monotonic: last_seen is persisted across restarts
+        now = time.time()
         data = {a.uid: a for a in appliances}
         for uid in data:
             self._last_seen[uid] = now
@@ -83,10 +131,11 @@ class MieleCoordinator(DataUpdateCoordinator[dict[str, MieleAppliance]]):
             if uid in data:
                 continue
             was_off = (previous.info.get("State") or "").lower() == "off"
-            if was_off or now - self._last_seen.get(uid, now) < MISSING_GRACE_SECONDS:
+            if was_off or now - self._last_seen.get(uid, 0) < MISSING_GRACE_SECONDS:
                 previous.actions = []  # nothing can be triggered off the bus
                 data[uid] = previous
 
+        self._async_save(data)
         return data
 
     def start_multicast_listener(self) -> None:
