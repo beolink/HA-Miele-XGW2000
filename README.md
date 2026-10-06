@@ -231,6 +231,7 @@ In the gateway's web interface (`http://<ip>/`) the following settings are recom
 **Integration finds no appliances**
 - Verify the gateway is reachable: `http://<ip>/homebus` should return XML
 - Check that appliances are connected via Powerline (the PL LED on the gateway should be solid)
+- Appliances can drop off the bus while idle, and the gateway may then list none at all (`<DEVICES></DEVICES>`). The integration adds an appliance's sensors and buttons when it shows up, so setup succeeds even with an empty list. Known appliances show as unavailable while they are off the bus.
 
 **Sensors show unknown/empty data**
 - Enable debug logging in HA to see which `key` names your gateway sends:

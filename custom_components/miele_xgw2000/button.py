@@ -5,7 +5,7 @@ import logging
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import MieleApiError
@@ -39,17 +39,26 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: MieleCoordinator = hass.data[DOMAIN][entry.entry_id]
-    entities: list[MieleActionButton] = []
+    added: set[tuple[str, str]] = set()
 
-    for uid, appliance in coordinator.data.items():
-        for action in appliance.actions:
-            # "Details" is the link to the detail XML, not something to press
-            if action.name.lower() == "details":
-                continue
-            if action.name in ACTION_LABELS or action.url:
-                entities.append(MieleActionButton(coordinator, uid, action.name, action.url))
+    @callback
+    def _add_new() -> None:
+        # Appliances drop off and rejoin the powerline bus, and actions are
+        # only offered in some states, so add buttons as they first appear.
+        entities: list[MieleActionButton] = []
+        for uid, appliance in (coordinator.data or {}).items():
+            for action in appliance.actions:
+                # "Details" is the link to the detail XML, not something to press
+                if action.name.lower() == "details" or (uid, action.name) in added:
+                    continue
+                if action.name in ACTION_LABELS or action.url:
+                    added.add((uid, action.name))
+                    entities.append(MieleActionButton(coordinator, uid, action.name, action.url))
+        if entities:
+            async_add_entities(entities)
 
-    async_add_entities(entities)
+    _add_new()
+    entry.async_on_unload(coordinator.async_add_listener(_add_new))
 
 
 class MieleActionButton(MieleEntity, ButtonEntity):

@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import MieleAppliance
@@ -162,15 +162,26 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: MieleCoordinator = hass.data[DOMAIN][entry.entry_id]
-    entities: list[MieleSensorEntity] = []
+    added: set[tuple[str, str]] = set()
 
-    for uid, appliance in coordinator.data.items():
-        for desc in SENSORS:
-            if desc.info_keys and not any(k in appliance.info for k in desc.info_keys):
-                continue
-            entities.append(MieleSensorEntity(coordinator, uid, desc))
+    @callback
+    def _add_new() -> None:
+        # Appliances drop off and rejoin the powerline bus (the gateway can
+        # list none at all), so add sensors as appliances and values appear.
+        entities: list[MieleSensorEntity] = []
+        for uid, appliance in (coordinator.data or {}).items():
+            for desc in SENSORS:
+                if (uid, desc.key) in added:
+                    continue
+                if desc.info_keys and not any(k in appliance.info for k in desc.info_keys):
+                    continue
+                added.add((uid, desc.key))
+                entities.append(MieleSensorEntity(coordinator, uid, desc))
+        if entities:
+            async_add_entities(entities)
 
-    async_add_entities(entities)
+    _add_new()
+    entry.async_on_unload(coordinator.async_add_listener(_add_new))
 
 
 class MieleSensorEntity(MieleEntity, SensorEntity):
