@@ -42,6 +42,8 @@ class MieleSensorDescription(SensorEntityDescription):
     info_keys: tuple[str, ...] = ()
 
 
+INVALID_TEMPERATURE = -30.0
+
 PROGRAM_KEYS = ("Program", "program", "selectedProgram")
 PHASE_KEYS = ("Phase", "phase", "programPhase")
 REMAINING_KEYS = ("Remaining Time", "remainingTime", "remainingProgramTime")
@@ -151,9 +153,13 @@ def _parse_temperature(value: str | None) -> float | None:
     if not value:
         return None
     try:
-        return float(value.split()[0].replace(",", "."))
+        temperature = float(value.split()[0].replace(",", "."))
     except (ValueError, IndexError):
         return None
+    # The gateway reports -30 °C when it has no reading (oven off)
+    if temperature <= INVALID_TEMPERATURE:
+        return None
+    return temperature
 
 
 async def async_setup_entry(

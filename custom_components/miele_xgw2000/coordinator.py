@@ -5,6 +5,7 @@ import asyncio
 import logging
 import socket
 import struct
+import time
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
@@ -14,6 +15,11 @@ from .api import MieleApi, MieleAppliance, MieleApiError
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, MCAST_GRP, MCAST_PORT
 
 _LOGGER = logging.getLogger(__name__)
+
+# Failed polls in a row before entities go unavailable
+MAX_TOLERATED_FAILURES = 3
+# How long an appliance that drops off mid-program keeps its last values
+MISSING_GRACE_SECONDS = 600
 
 
 class MieleCoordinator(DataUpdateCoordinator[dict[str, MieleAppliance]]):
@@ -28,12 +34,25 @@ class MieleCoordinator(DataUpdateCoordinator[dict[str, MieleAppliance]]):
         )
         self.api = api
         self._mcast_task: asyncio.Task | None = None
+        self._failures = 0
+        self._last_seen: dict[str, float] = {}
 
     async def _async_update_data(self) -> dict[str, MieleAppliance]:
         try:
             appliances = await self.api.get_appliances()
         except MieleApiError as exc:
+            # The gateway misses the odd request (timeout or refused
+            # connection). Keep the last data through a few misses in a row
+            # rather than flapping every entity to unavailable.
+            self._failures += 1
+            if self.data is not None and self._failures < MAX_TOLERATED_FAILURES:
+                _LOGGER.debug(
+                    "Gateway request failed (%s/%s), keeping last data: %s",
+                    self._failures, MAX_TOLERATED_FAILURES, exc,
+                )
+                return self.data
             raise UpdateFailed(str(exc)) from exc
+        self._failures = 0
 
         # Enrich each appliance with detail data (actions available depend on state)
         for appliance in appliances:
@@ -51,7 +70,24 @@ class MieleCoordinator(DataUpdateCoordinator[dict[str, MieleAppliance]]):
                 except MieleApiError:
                     pass  # keep what we have from the base list
 
-        return {a.uid: a for a in appliances}
+        now = time.monotonic()
+        data = {a.uid: a for a in appliances}
+        for uid in data:
+            self._last_seen[uid] = now
+
+        # Idle appliances drop off the powerline bus for minutes at a time and
+        # the gateway stops listing them. One that was off when it left is
+        # still off, so keep showing it; one that left mid-program gets a
+        # grace period before its entities go unavailable.
+        for uid, previous in (self.data or {}).items():
+            if uid in data:
+                continue
+            was_off = (previous.info.get("State") or "").lower() == "off"
+            if was_off or now - self._last_seen.get(uid, now) < MISSING_GRACE_SECONDS:
+                previous.actions = []  # nothing can be triggered off the bus
+                data[uid] = previous
+
+        return data
 
     def start_multicast_listener(self) -> None:
         """Start listening for UDP push notifications from the gateway."""

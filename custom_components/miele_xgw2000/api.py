@@ -65,8 +65,8 @@ class MieleApi:
                 if resp.status != 200:
                     raise MieleApiError(f"HTTP {resp.status} for {url}")
                 text = await resp.text()
-        except aiohttp.ClientError as exc:
-            raise MieleApiError(str(exc)) from exc
+        except (aiohttp.ClientError, TimeoutError) as exc:
+            raise MieleApiError(str(exc) or type(exc).__name__) from exc
 
         try:
             return ET.fromstring(text)
@@ -111,8 +111,8 @@ class MieleApi:
                 url, auth=self._auth, timeout=aiohttp.ClientTimeout(total=10)
             ) as resp:
                 text = await resp.text()
-        except aiohttp.ClientError as exc:
-            raise MieleApiError(str(exc)) from exc
+        except (aiohttp.ClientError, TimeoutError) as exc:
+            raise MieleApiError(str(exc) or type(exc).__name__) from exc
 
         try:
             root = ET.fromstring(text)
