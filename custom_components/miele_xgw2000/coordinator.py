@@ -37,8 +37,9 @@ class MieleCoordinator(DataUpdateCoordinator[dict[str, MieleAppliance]]):
 
         # Enrich each appliance with detail data (actions available depend on state)
         for appliance in appliances:
+            # Real gateways name it "Details"; match case-insensitively
             detail_action = next(
-                (a for a in appliance.actions if a.name == "details"), None
+                (a for a in appliance.actions if a.name.lower() == "details"), None
             )
             if detail_action:
                 try:

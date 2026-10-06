@@ -159,8 +159,13 @@ In addition to polling, the gateway automatically sends a UDP notification to mu
 | **Program** | Selected program (e.g. Cotton, Easy-Care) |
 | **Phase** | Current phase (Washing, Rinsing, Spinning, etc.) |
 | **Remaining time** | Time remaining in minutes |
+| **Duration** | Program duration in minutes |
 | **Start time** | Scheduled start time |
 | **End time** | Estimated end time |
+| **Cooking function** | Ovens: selected cooking function |
+| **Temperature** / **Core temperature** | Ovens: cavity and probe temperature (°C) |
+
+Apart from Status, a sensor is only created when the appliance reports the matching value. The gateway names values in plain language in the detail XML (`State`, `Phase`, `Remaining Time`, …); the older camelCase names (`remainingTime`, …) are accepted too.
 
 ### Buttons (per appliance, depending on state)
 
@@ -202,7 +207,7 @@ In addition to polling, the gateway automatically sends a UDP notification to mu
 
 | Field | Description | Default |
 |-------|-------------|---------|
-| **IP Address** | IP address of the gateway | `10.0.40.20` |
+| **IP Address** | IP address of the gateway (factory default `192.168.1.237`) | — |
 | **Username** | Login for Homebus (if enabled) | `xgw2000` |
 | **Password** | Password for Homebus (if enabled) | `xgw2000` |
 | **Poll interval** | Seconds between updates | `30` |

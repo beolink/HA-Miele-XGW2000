@@ -12,7 +12,6 @@ from .const import (
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
-    DEFAULT_HOST,
     DEFAULT_PASSWORD,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_USERNAME,
@@ -21,7 +20,7 @@ from .const import (
 
 STEP_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
+        vol.Required(CONF_HOST): str,
         vol.Optional(CONF_USERNAME, default=DEFAULT_USERNAME): str,
         vol.Optional(CONF_PASSWORD, default=DEFAULT_PASSWORD): str,
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,

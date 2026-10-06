@@ -43,6 +43,9 @@ async def async_setup_entry(
 
     for uid, appliance in coordinator.data.items():
         for action in appliance.actions:
+            # "Details" is the link to the detail XML, not something to press
+            if action.name.lower() == "details":
+                continue
             if action.name in ACTION_LABELS or action.url:
                 entities.append(MieleActionButton(coordinator, uid, action.name, action.url))
 
