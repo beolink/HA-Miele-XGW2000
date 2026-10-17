@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.4.1] - 2026-10-18
+
+- HACS validation runs with no checks disabled; the brand images in the integration pass the brands check.
+
 ## [1.4.0] - 2026-10-18
 
 - Anonymous daily usage statistics to stats.rnet.se (on by default, switch it off under Configure). Sends the appliance models and their count, never names or rooms.
