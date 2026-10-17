@@ -1,0 +1,44 @@
+name: Release
+
+# Push a tag like v0.8.0 (matching manifest.json's version) and this creates
+# the GitHub Release HACS installs from, with notes from CHANGELOG.md.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches manifest version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          MANIFEST=$(python3 -c "import json;print(json.load(open('custom_components/miele_xgw2000/manifest.json'))['version'])")
+          if [ "$TAG" != "$MANIFEST" ]; then
+            echo "Tag v$TAG does not match manifest version $MANIFEST" >&2
+            exit 1
+          fi
+
+      - name: Extract changelog section
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          touch CHANGELOG.md
+          awk -v ver="$TAG" '
+            $0 ~ "^## \\[" ver "\\]" {flag=1; next}
+            /^## \[/ {flag=0}
+            flag' CHANGELOG.md > .release-notes.md
+          [ -s .release-notes.md ] || echo "See CHANGELOG.md" > .release-notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Miele XGW 2000 $GITHUB_REF_NAME" \
+            --notes-file .release-notes.md

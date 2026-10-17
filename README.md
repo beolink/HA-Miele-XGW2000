@@ -1,9 +1,9 @@
 # Miele XGW 2000 — Home Assistant Integration
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-[![HA version](https://img.shields.io/badge/Home%20Assistant-2023.4%2B-blue.svg)](https://www.home-assistant.io)
+[![HA version](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-blue.svg)](https://www.home-assistant.io)
 
-Local integration for Miele@home appliances connected via the **XGW 2000** gateway. No cloud, no Miele account required — communicates directly with the gateway on your LAN.
+Local integration for Miele@home appliances connected via the **XGW 2000** gateway. No cloud, no Miele account required — communicates directly with the gateway on your LAN. (The only thing that leaves the house is an optional, anonymous daily usage report; see [Anonymous statistics](#anonymous-statistics).)
 
 ---
 
@@ -247,6 +247,26 @@ logger:
 
 **Buttons are greyed out / unavailable**
 - This is normal — the gateway only exposes actions that are valid in the appliance's current state. Start is only shown when the appliance is ready, stop only when it is running.
+
+---
+
+## Anonymous statistics
+
+The integration sends one report per day to <https://stats.rnet.se>: the version
+of the integration, your Home Assistant version and installation type, the
+country you have set in Home Assistant itself, an approximate position rounded
+to about 11 km, how many entities and devices it created, the appliance models
+the gateway reports (for example `h5681bp`) and how many appliances it has, how
+many warnings and errors the integration's own logger wrote, and whether the
+integration is running. Never names, rooms, addresses, an exact position,
+serial numbers, entity names, log messages or time series, and the IP address
+is not stored. The statistics sit behind a login and are seen only by whoever
+runs the service.
+
+If you would rather not take part: *Settings → Devices & services → Miele XGW
+2000 → Configure → Send anonymous usage statistics*. Reporting then stops;
+what has already been sent stays, anonymous and per day, and is erased on
+request. Exactly what is collected: <https://stats.rnet.se/integritet>.
 
 ---
 

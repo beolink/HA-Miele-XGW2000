@@ -18,5 +18,18 @@
     "abort": {
       "already_configured": "This gateway is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Miele XGW 2000",
+        "data": {
+          "send_statistics": "Send anonymous usage statistics"
+        },
+        "data_description": {
+          "send_statistics": "One report per day to {endpoint}: version, Home Assistant version and installation type, country and an approximate position rounded to about 11 km, number of entities and devices, the appliance models and how many appliances the gateway has, the number of errors and warnings in the log, and whether the integration is running. Never names, rooms, addresses, an exact position, log messages or a time series. Switching it off stops the reporting; what has already been sent stays."
+        }
+      }
+    }
   }
 }

@@ -1,12 +1,15 @@
 {
   "domain": "miele_xgw2000",
   "name": "Miele XGW 2000",
-  "codeowners": [],
+  "codeowners": [
+    "@beolink"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/beolink/HA-Miele-XGW2000",
+  "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/beolink/HA-Miele-XGW2000/issues",
   "requirements": [],
-  "version": "1.3.0"
+  "version": "1.4.0"
 }

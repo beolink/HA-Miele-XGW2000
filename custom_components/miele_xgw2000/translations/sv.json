@@ -1,0 +1,35 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Miele XGW 2000-gateway",
+        "description": "Ange anslutningsuppgifterna för din XGW 2000-gateway.",
+        "data": {
+          "host": "IP-adress",
+          "username": "Användarnamn",
+          "password": "Lösenord",
+          "scan_interval": "Uppdateringsintervall (sekunder)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan inte ansluta till gatewayen. Kontrollera IP-adressen och inloggningsuppgifterna."
+    },
+    "abort": {
+      "already_configured": "Den här gatewayen är redan konfigurerad."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Miele XGW 2000",
+        "data": {
+          "send_statistics": "Skicka anonym användningsstatistik"
+        },
+        "data_description": {
+          "send_statistics": "En rapport per dygn till {endpoint}: version, Home Assistant-version och installationstyp, land och ungefärlig plats avrundad till cirka 11 km, antal entiteter och enheter, apparatmodellerna och hur många apparater gatewayen har, antal fel och varningar i loggen och om integrationen är igång. Aldrig namn, rum, adress, exakt position, loggmeddelanden eller en tidsserie. Stängs den av slutar rapporteringen, och det som redan skickats står kvar."
+        }
+      }
+    }
+  }
+}
